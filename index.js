@@ -6,6 +6,7 @@ const cors = require('cors')
 app.use(cors())
 app.use(express.json())
 require('dotenv').config();
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const jwt = require('jsonwebtoken');
 
 
@@ -35,6 +36,7 @@ async function run() {
         const partsCollection = client.db("Assignment_Twelve").collection("CarParts")
         const OrderCollection = client.db("Assignment_Twelve").collection("Order")
         const userCollection = client.db("Assignment_Twelve").collection("User")
+        const paymentCollection = client.db("Assignment_Twelve").collection("payments")
 
         // All Car Parts get
         app.get('/carParts', async (req, res) => {
@@ -86,6 +88,50 @@ async function run() {
                 return res.status(403).send({ message: "Forbidden Access" })
             }
         })
+
+        // myOrder Delete
+        app.delete('/myOrder/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await OrderCollection.deleteOne(query);
+            res.send(result);
+        });
+
+        app.get('/myOrder/:id', verifyJwt, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const Order = await OrderCollection.findOne(query);
+            res.send(Order);
+        });
+
+        app.post('/create-payment-intent', verifyJwt, async (req, res) => {
+            const order = req.body;
+            const price = order.price;
+            const amount = price * 100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            });
+            res.send({ clientSecret: paymentIntent.client_secret })
+        });
+
+        app.patch('/myOrder/:id', verifyJwt, async (req, res) => {
+            const id = req.params.id;
+            const payment = req.body;
+            const filter = { _id: ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+
+            const result = await paymentCollection.insertOne(payment);
+            const updatedOrder = await OrderCollection.updateOne(filter, updatedDoc);
+            res.send(updatedOrder);
+        })
+
     }
     finally {
 
