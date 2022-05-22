@@ -37,6 +37,7 @@ async function run() {
         const OrderCollection = client.db("Assignment_Twelve").collection("Order")
         const userCollection = client.db("Assignment_Twelve").collection("User")
         const paymentCollection = client.db("Assignment_Twelve").collection("payments")
+        const ReviewCollection = client.db("Assignment_Twelve").collection("Reviews")
 
         // All Car Parts get
         app.get('/carParts', async (req, res) => {
@@ -97,6 +98,7 @@ async function run() {
             res.send(result);
         });
 
+        // payment id page api
         app.get('/myOrder/:id', verifyJwt, async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
@@ -104,6 +106,7 @@ async function run() {
             res.send(Order);
         });
 
+        // Payment
         app.post('/create-payment-intent', verifyJwt, async (req, res) => {
             const order = req.body;
             const price = order.price;
@@ -116,6 +119,7 @@ async function run() {
             res.send({ clientSecret: paymentIntent.client_secret })
         });
 
+        // pay paid api
         app.patch('/myOrder/:id', verifyJwt, async (req, res) => {
             const id = req.params.id;
             const payment = req.body;
@@ -130,6 +134,21 @@ async function run() {
             const result = await paymentCollection.insertOne(payment);
             const updatedOrder = await OrderCollection.updateOne(filter, updatedDoc);
             res.send(updatedOrder);
+        })
+
+        // Add a Review collection
+        app.post('/review', async (req, res) => {
+            const review = req.body;
+            const result = await ReviewCollection.insertOne(review);
+            res.send(result);
+        });
+
+        // All reviews collection
+        app.get('/review', async (req, res) => {
+            const query = {};
+            const cursor = ReviewCollection.find(query);
+            const reviews = await cursor.toArray();
+            res.send(reviews);
         })
 
     }
