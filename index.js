@@ -38,6 +38,7 @@ async function run() {
         const userCollection = client.db("Assignment_Twelve").collection("User")
         const paymentCollection = client.db("Assignment_Twelve").collection("payments")
         const ReviewCollection = client.db("Assignment_Twelve").collection("Reviews")
+        const ProfileCollection = client.db("Assignment_Twelve").collection("Profile")
 
         // All Car Parts get
         app.get('/carParts', async (req, res) => {
@@ -149,6 +150,20 @@ async function run() {
             const cursor = ReviewCollection.find(query);
             const reviews = await cursor.toArray();
             res.send(reviews);
+        })
+
+        // My Profile
+        app.get('/myProfile', verifyJwt, async (req, res) => {
+            const email = req.query.email
+            const decodedEmail = req.decoded.email
+            if (decodedEmail) {
+                const query = { email: email }
+                const profiles = await ProfileCollection.find(query).toArray()
+                return res.send(profiles)
+            }
+            else {
+                return res.status(403).send({ message: "Forbidden Access" })
+            }
         })
 
     }
