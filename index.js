@@ -36,6 +36,7 @@ async function run() {
         const OrderCollection = client.db("Assignment_Twelve").collection("Order")
         const userCollection = client.db("Assignment_Twelve").collection("User")
 
+        // All Car Parts get
         app.get('/carParts', async (req, res) => {
             const query = {};
             const cursor = partsCollection.find(query);
@@ -43,6 +44,7 @@ async function run() {
             res.send(carParts);
         })
 
+        // CarParts Details Page
         app.get('/carParts/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
@@ -50,12 +52,14 @@ async function run() {
             res.send(part);
         });
 
+        // Add myOrder
         app.post('/myOrder', async (req, res) => {
             const Orders = req.body;
             const result = await OrderCollection.insertOne(Orders);
             res.send(result);
         });
 
+        // Use Token
         app.put('/user/:email', async (req, res) => {
             const email = req.params.email
             const user = req.body
@@ -67,6 +71,20 @@ async function run() {
             const result = await userCollection.updateOne(filter, updateDoc, option)
             const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
             res.send({ result, token })
+        })
+
+        // My order Collection
+        app.get('/myOrder', verifyJwt, async (req, res) => {
+            const email = req.query.email
+            const decodedEmail = req.decoded.email
+            if (decodedEmail) {
+                const query = { email: email }
+                const bookings = await OrderCollection.find(query).toArray()
+                return res.send(bookings)
+            }
+            else {
+                return res.status(403).send({ message: "Forbidden Access" })
+            }
         })
     }
     finally {
