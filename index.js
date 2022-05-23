@@ -231,6 +231,21 @@ async function run() {
             res.send(result)
         })
 
+        // All Orders 
+        app.get('/allOrders', async (req, res) => {
+            const query = {};
+            const cursor = OrderCollection.find(query);
+            const allOrders = await cursor.toArray();
+            res.send(allOrders);
+        })
+
+        // Add Car Parts
+        app.post('/addParts', async (req, res) => {
+            const parts = req.body;
+            const result = await partsCollection.insertOne(parts);
+            res.send(result);
+        });
+
     }
     finally {
 
