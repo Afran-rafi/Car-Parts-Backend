@@ -40,6 +40,18 @@ async function run() {
         const ReviewCollection = client.db("Assignment_Twelve").collection("Reviews")
         const ProfileCollection = client.db("Assignment_Twelve").collection("Profile")
 
+        // verifyAdmin 
+        const verifyAdmin = async (req, res, next) => {
+            const requester = req.decoded.email;
+            const requesterAccount = await userCollection.findOne({ email: requester });
+            if (requesterAccount.role === 'admin') {
+                next();
+            }
+            else {
+                res.status(403).send({ message: 'forbidden' });
+            }
+        }
+
         // All Car Parts get
         app.get('/carParts', async (req, res) => {
             const query = {};
@@ -192,6 +204,31 @@ async function run() {
             const result = await ProfileCollection.updateOne(filter, updatedDoc, options);
             res.send(result);
 
+        })
+
+        // UseAdmin
+        app.get('/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = await userCollection.findOne({ email: email });
+            const isAdmin = user.role === 'admin';
+            res.send({ admin: isAdmin })
+        })
+
+        // All user collection
+        app.get('/user', verifyJwt, async (req, res) => {
+            const users = await userCollection.find().toArray()
+            res.send(users)
+        })
+
+        // Make Admin (Update)
+        app.put('/user/admin/:email', verifyJwt, verifyAdmin, async (req, res) => {
+            const email = req.params.email
+            const filter = { email: email }
+            const updateDoc = {
+                $set: { role: "admin" },
+            }
+            const result = await userCollection.updateOne(filter, updateDoc)
+            res.send(result)
         })
 
     }
