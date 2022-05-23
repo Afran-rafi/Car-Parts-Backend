@@ -246,6 +246,14 @@ async function run() {
             res.send(result);
         });
 
+        // Manage Car Parts
+        app.delete('/CarParts/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await partsCollection.deleteOne(query);
+            res.send(result);
+        });
+
     }
     finally {
 
